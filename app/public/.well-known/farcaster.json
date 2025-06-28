@@ -1,0 +1,15 @@
+{
+  "frame": {
+    "version": "1",
+    "name": "FY Money",
+    "homeUrl": "https://wallet.fymoney.xyz",
+    "splashBackgroundColor": "#667eea",
+    "subtitle": "Your USDC Yield Wallet",
+    "description": "Send USDC by email, earn APY, and manage your digital dollars with ease. Built on Solana for fast, low-cost transactions.",
+    "primaryCategory": "finance",
+    "tags": ["usdc", "yield", "earnings", "stablecoin", "solana", "defi"],
+    "ogTitle": "FY Money - Your USDC Yield Wallet",
+    "ogDescription": "Send USDC by email, earn APY, and manage your digital dollars with ease",
+    "tagline": "Send, earn, and grow your USDC"
+  }
+}

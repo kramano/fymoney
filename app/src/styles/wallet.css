@@ -1,0 +1,518 @@
+/* FY Money Glassmorphic Design System */
+
+/* Global Glassmorphic Variables */
+:root {
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --glass-border: rgba(255, 255, 255, 0.2);
+  --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  --glass-blur: 20px;
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-logo: linear-gradient(135deg, #4f46e5, #7c3aed);
+  --gradient-send: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  --gradient-receive: linear-gradient(135deg, #10b981, #047857);
+  --gradient-earn: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  --gradient-topup: linear-gradient(135deg, #f59e0b, #d97706);
+  --gradient-top-line: linear-gradient(90deg, #4f46e5, #7c3aed, #ec4899);
+  --gradient-balance: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-muted: #94a3b8;
+  --text-dark: #1e293b;
+  --text-balance: #64748b;
+  --earning-green: #10b981;
+  --earning-green-text: #059669;
+  --earning-bg: rgba(16, 185, 129, 0.1);
+  --earning-border: rgba(16, 185, 129, 0.2);
+  --border-light: rgba(148, 163, 184, 0.1);
+  --border-separator: rgba(148, 163, 184, 0.2);
+  --radius-large: 24px;
+  --radius-medium: 20px;
+  --radius-button: 18px;
+  --radius-small: 12px;
+  --radius-logo: 18px;
+}
+
+/* Global Body Background */
+body {
+  background: var(--gradient-primary) !important;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+/* Ensure no component overrides the background */
+html, body, #root, [data-reactroot] {
+  background: var(--gradient-primary) !important;
+  min-height: 100vh !important;
+}
+
+/* Glassmorphic Container Base */
+.glass-container {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border-radius: var(--radius-large);
+  box-shadow: var(--glass-shadow);
+  border: 1px solid var(--glass-border);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-top-line);
+  z-index: 1;
+}
+
+/* Wallet Card Styling */
+.fy-wallet-card {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 32px;
+}
+
+/* Header Styling */
+.fy-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 40px;
+  justify-content: center;
+}
+
+.fy-logo {
+  width: 56px;
+  height: 56px;
+  background: var(--gradient-logo);
+  border-radius: var(--radius-logo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 18px;
+  box-shadow: 0 8px 16px rgba(79, 70, 229, 0.3);
+  position: relative;
+}
+
+.fy-brand-info {
+  text-align: center;
+}
+
+.fy-brand-name {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+}
+
+.fy-brand-tagline {
+  font-size: 15px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Balance Section */
+.fy-balance-section {
+  text-align: center;
+  margin-bottom: 40px;
+  padding: 32px 24px;
+  background: var(--gradient-balance);
+  border-radius: var(--radius-medium);
+  border: 1px solid var(--border-light);
+}
+
+.fy-balance-label {
+  font-size: 16px;
+  color: var(--text-balance);
+  margin-bottom: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.fy-balance-amount {
+  font-size: 48px;
+  font-weight: 900;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+  letter-spacing: -1.5px;
+  line-height: 1;
+}
+
+.fy-balance-currency {
+  font-size: 28px;
+  color: var(--text-balance);
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+/* Earning Status */
+.fy-earning-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 12px 20px;
+  background: var(--earning-bg);
+  border-radius: var(--radius-small);
+  border: 1px solid var(--earning-border);
+  backdrop-filter: blur(10px);
+}
+
+.fy-earning-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--earning-green);
+  border-radius: 50%;
+  animation: fy-pulse 2s infinite;
+}
+
+.fy-earning-text {
+  font-size: 15px;
+  color: var(--earning-green-text);
+  font-weight: 700;
+}
+
+@keyframes fy-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* Action Buttons */
+.fy-action-button {
+  width: 100%;
+  padding: 20px;
+  border-radius: var(--radius-button);
+  border: none;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-decoration: none;
+  margin-bottom: 16px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.fy-action-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.fy-action-button:active {
+  transform: translateY(0);
+}
+
+.fy-action-button:disabled {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.fy-send-btn {
+  background: var(--gradient-send);
+  color: white;
+}
+
+.fy-receive-btn {
+  background: var(--gradient-receive);
+  color: white;
+}
+
+.fy-earn-btn {
+  background: var(--gradient-earn);
+  color: white;
+}
+
+.fy-topup-btn {
+  background: var(--gradient-topup);
+  color: white;
+  margin-bottom: 24px;
+}
+
+.fy-button-icon {
+  font-size: 20px;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+}
+
+/* Footer */
+.fy-footer {
+  text-align: center;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-separator);
+}
+
+.fy-footer-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Loading State */
+.fy-loading {
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.fy-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: fy-loading-shimmer 1.5s infinite;
+}
+
+@keyframes fy-loading-shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Modal Styling */
+.fy-modal-backdrop {
+  background: rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.fy-modal-container {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border-radius: var(--radius-large);
+  box-shadow: var(--glass-shadow);
+  border: 1px solid var(--glass-border);
+  padding: 32px;
+  width: 100%;
+  max-width: 440px;
+  position: relative;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.fy-modal-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-top-line);
+  z-index: 1;
+}
+
+/* Modal entrance animation */
+@keyframes fy-modal-enter {
+  0% { 
+    opacity: 0; 
+    transform: scale(0.95) translateY(10px); 
+  }
+  100% { 
+    opacity: 1; 
+    transform: scale(1) translateY(0); 
+  }
+}
+
+.fy-modal-enter {
+  animation: fy-modal-enter 0.2s ease-out;
+}
+
+/* Form Elements */
+.fy-input {
+  width: 100%;
+  padding: 16px 20px;
+  border-radius: var(--radius-small);
+  border: 1px solid var(--border-light);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  font-size: 16px;
+  color: var(--text-dark);
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.fy-input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.fy-input::placeholder {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.fy-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Form Button Variants */
+.fy-button-primary {
+  background: var(--gradient-send);
+  color: white;
+  padding: 16px 24px;
+  border-radius: var(--radius-small);
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fy-button-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+}
+
+.fy-button-primary:disabled {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.fy-button-secondary {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
+  color: var(--text-secondary);
+  padding: 16px 24px;
+  border-radius: var(--radius-small);
+  border: 1px solid var(--border-light);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fy-button-secondary:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--text-secondary);
+  transform: translateY(-1px);
+}
+
+.fy-button-secondary:disabled {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Alert/Error States */
+.fy-alert-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: var(--radius-small);
+  backdrop-filter: blur(10px);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.fy-alert-success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: var(--earning-green-text);
+  padding: 12px 16px;
+  border-radius: var(--radius-small);
+  backdrop-filter: blur(10px);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 480px) {
+  .fy-wallet-card {
+    padding: 24px;
+    margin: 16px;
+  }
+
+  .fy-balance-amount {
+    font-size: 42px;
+  }
+
+  .fy-brand-name {
+    font-size: 24px;
+  }
+
+  .fy-action-button {
+    padding: 18px;
+    font-size: 16px;
+  }
+
+  .fy-modal-container {
+    padding: 24px;
+    margin: 16px;
+  }
+}
+
+/* Utility Classes */
+.fy-flex {
+  display: flex;
+}
+
+.fy-flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fy-flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fy-text-center {
+  text-align: center;
+}
+
+.fy-w-full {
+  width: 100%;
+}
+
+.fy-mb-4 {
+  margin-bottom: 16px;
+}
+
+.fy-mb-6 {
+  margin-bottom: 24px;
+}
+
+.fy-mt-4 {
+  margin-top: 16px;
+}
+
+.fy-gap-3 {
+  gap: 12px;
+}
+
+.fy-space-y-4 > * + * {
+  margin-top: 16px;
+}
+
+.fy-space-y-6 > * + * {
+  margin-top: 24px;
+}
