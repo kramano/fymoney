@@ -5,7 +5,9 @@
       "Bash(npm run build:*)",
       "Bash(anchor build)",
       "Bash(cargo check:*)",
-      "Bash(cargo:*)"
+      "Bash(cargo:*)",
+      "Bash(anchor test:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

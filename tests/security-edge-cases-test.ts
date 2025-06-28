@@ -12,6 +12,7 @@ import {
 import { PublicKey, Keypair, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 import { assert } from "chai";
 import * as crypto from "crypto";
+import { findNextNonce, getEscrowPDA } from "./utils/nonce-helper";
 
 describe("Security and Edge Cases", () => {
   const provider = anchor.AnchorProvider.env();
@@ -92,12 +93,11 @@ describe("Security and Edge Cases", () => {
           crypto.createHash('sha256').update(zeroEmail.toLowerCase().trim()).digest()
         );
         
-        const [zeroPDA] = PublicKey.findProgramAddressSync(
-          [
-            Buffer.from("escrow"),
-            payer.publicKey.toBuffer(),
-            Buffer.from(zeroEmailHash)
-          ],
+        const zeroNonce = await findNextNonce(payer.publicKey, zeroEmailHash, program);
+        const [zeroPDA] = getEscrowPDA(
+          payer.publicKey,
+          zeroEmailHash,
+          zeroNonce,
           program.programId
         );
 
@@ -113,7 +113,8 @@ describe("Security and Edge Cases", () => {
           .initializeEscrow(
             new BN(0), // Zero amount
             zeroEmailHash,
-            expiresAt
+            expiresAt,
+            new BN(zeroNonce)
           )
           .accounts({
             escrowAccount: zeroPDA,
@@ -145,12 +146,11 @@ describe("Security and Edge Cases", () => {
           crypto.createHash('sha256').update(pastEmail.toLowerCase().trim()).digest()
         );
         
-        const [pastPDA] = PublicKey.findProgramAddressSync(
-          [
-            Buffer.from("escrow"),
-            payer.publicKey.toBuffer(),
-            Buffer.from(pastEmailHash)
-          ],
+        const pastNonce = await findNextNonce(payer.publicKey, pastEmailHash, program);
+        const [pastPDA] = getEscrowPDA(
+          payer.publicKey,
+          pastEmailHash,
+          pastNonce,
           program.programId
         );
 
@@ -166,7 +166,8 @@ describe("Security and Edge Cases", () => {
           .initializeEscrow(
             ESCROW_AMOUNT,
             pastEmailHash,
-            pastExpiresAt
+            pastExpiresAt,
+            new BN(pastNonce)
           )
           .accounts({
             escrowAccount: pastPDA,
@@ -198,12 +199,11 @@ describe("Security and Edge Cases", () => {
           crypto.createHash('sha256').update(longEmail.toLowerCase().trim()).digest()
         );
         
-        const [longPDA] = PublicKey.findProgramAddressSync(
-          [
-            Buffer.from("escrow"),
-            payer.publicKey.toBuffer(),
-            Buffer.from(longEmailHash)
-          ],
+        const longNonce = await findNextNonce(payer.publicKey, longEmailHash, program);
+        const [longPDA] = getEscrowPDA(
+          payer.publicKey,
+          longEmailHash,
+          longNonce,
           program.programId
         );
 
@@ -219,7 +219,8 @@ describe("Security and Edge Cases", () => {
           .initializeEscrow(
             ESCROW_AMOUNT,
             longEmailHash,
-            longExpiresAt
+            longExpiresAt,
+            new BN(longNonce)
           )
           .accounts({
             escrowAccount: longPDA,
@@ -251,12 +252,11 @@ describe("Security and Edge Cases", () => {
       // Create a valid escrow for unauthorized access tests
       console.log("📝 Creating valid escrow for unauthorized tests...");
       
-      [validEscrowPDA] = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from("escrow"),
-          payer.publicKey.toBuffer(),
-          Buffer.from(SECURITY_EMAIL_HASH)
-        ],
+      const validNonce = await findNextNonce(payer.publicKey, SECURITY_EMAIL_HASH, program);
+      [validEscrowPDA] = getEscrowPDA(
+        payer.publicKey,
+        SECURITY_EMAIL_HASH,
+        validNonce,
         program.programId
       );
 
@@ -272,7 +272,8 @@ describe("Security and Edge Cases", () => {
         .initializeEscrow(
           ESCROW_AMOUNT,
           SECURITY_EMAIL_HASH,
-          expiresAt
+          expiresAt,
+          new BN(validNonce)
         )
         .accounts({
           escrowAccount: validEscrowPDA,
@@ -346,12 +347,11 @@ describe("Security and Edge Cases", () => {
         crypto.createHash('sha256').update(claimEmail.toLowerCase().trim()).digest()
       );
       
-      [claimTestPDA] = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from("escrow"),
-          payer.publicKey.toBuffer(),
-          Buffer.from(claimEmailHash)
-        ],
+      const claimNonce = await findNextNonce(payer.publicKey, claimEmailHash, program);
+      [claimTestPDA] = getEscrowPDA(
+        payer.publicKey,
+        claimEmailHash,
+        claimNonce,
         program.programId
       );
 
@@ -367,7 +367,8 @@ describe("Security and Edge Cases", () => {
         .initializeEscrow(
           ESCROW_AMOUNT,
           claimEmailHash,
-          expiresAt
+          expiresAt,
+          new BN(claimNonce)
         )
         .accounts({
           escrowAccount: claimTestPDA,
@@ -439,12 +440,11 @@ describe("Security and Edge Cases", () => {
           crypto.createHash('sha256').update(expiredEmail.toLowerCase().trim()).digest()
         );
         
-        const [expiredPDA] = PublicKey.findProgramAddressSync(
-          [
-            Buffer.from("escrow"),
-            payer.publicKey.toBuffer(),
-            Buffer.from(expiredEmailHash)
-          ],
+        const expiredNonce = await findNextNonce(payer.publicKey, expiredEmailHash, program);
+        const [expiredPDA] = getEscrowPDA(
+          payer.publicKey,
+          expiredEmailHash,
+          expiredNonce,
           program.programId
         );
 
@@ -461,7 +461,8 @@ describe("Security and Edge Cases", () => {
           .initializeEscrow(
             ESCROW_AMOUNT,
             expiredEmailHash,
-            quickExpiresAt
+            quickExpiresAt,
+            new BN(expiredNonce)
           )
           .accounts({
             escrowAccount: expiredPDA,
@@ -527,12 +528,11 @@ describe("Security and Edge Cases", () => {
           crypto.createHash('sha256').update(maxEmail.toLowerCase().trim()).digest()
         );
         
-        const [maxPDA] = PublicKey.findProgramAddressSync(
-          [
-            Buffer.from("escrow"),
-            payer.publicKey.toBuffer(),
-            Buffer.from(maxEmailHash)
-          ],
+        const maxNonce = await findNextNonce(payer.publicKey, maxEmailHash, program);
+        const [maxPDA] = getEscrowPDA(
+          payer.publicKey,
+          maxEmailHash,
+          maxNonce,
           program.programId
         );
 
@@ -548,7 +548,8 @@ describe("Security and Edge Cases", () => {
           .initializeEscrow(
             ESCROW_AMOUNT,
             maxEmailHash,
-            maxExpiresAt
+            maxExpiresAt,
+            new BN(maxNonce)
           )
           .accounts({
             escrowAccount: maxPDA,

@@ -12,6 +12,7 @@ import {
 import { PublicKey, Keypair, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 import { assert } from "chai";
 import * as crypto from "crypto";
+import { findNextNonce, getEscrowPDA } from "./utils/nonce-helper";
 
 describe("Initialize Escrow", () => {
   const provider = anchor.AnchorProvider.env();
@@ -84,18 +85,18 @@ describe("Initialize Escrow", () => {
     
     const expiresAt = new BN(Math.floor(Date.now() / 1000) + 86400); // 1 day
     
-    // Generate PDA for escrow account
-    const [escrowPDA, escrowBump] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from("escrow"),
-        payer.publicKey.toBuffer(),
-        Buffer.from(RECIPIENT_EMAIL_HASH)
-      ],
+    // Find next available nonce and generate PDA
+    const nonce = await findNextNonce(payer.publicKey, RECIPIENT_EMAIL_HASH, program);
+    const [escrowPDA, escrowBump] = getEscrowPDA(
+      payer.publicKey,
+      RECIPIENT_EMAIL_HASH,
+      nonce,
       program.programId
     );
     
     console.log("📋 Test parameters:");
     console.log("- Escrow PDA:", escrowPDA.toString(), "bump:", escrowBump);
+    console.log("- Nonce:", nonce);
     console.log("- Amount:", ESCROW_AMOUNT.toString(), "base units (1 USDC)");
     console.log("- Recipient email hash:", Buffer.from(RECIPIENT_EMAIL_HASH).toString('hex'));
     console.log("- Expires at:", new Date(expiresAt.toNumber() * 1000).toISOString());
@@ -133,7 +134,8 @@ describe("Initialize Escrow", () => {
         .initializeEscrow(
           ESCROW_AMOUNT,
           RECIPIENT_EMAIL_HASH,
-          expiresAt
+          expiresAt,
+          new BN(nonce)
         )
         .accounts(accounts)
         .rpc();

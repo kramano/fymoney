@@ -12,6 +12,7 @@ import {
 import { PublicKey, Keypair, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 import { assert } from "chai";
 import * as crypto from "crypto";
+import { findNextNonce, getEscrowPDA } from "./utils/nonce-helper";
 
 describe("Reclaim Expired Escrow", () => {
   const provider = anchor.AnchorProvider.env();
@@ -24,6 +25,7 @@ describe("Reclaim Expired Escrow", () => {
   let senderTokenAccount: PublicKey;
   let escrowPDA: PublicKey;
   let escrowBump: number;
+  let escrowNonce: number;
   let escrowTokenAccount: PublicKey;
   
   const ESCROW_AMOUNT = new BN(2_000_000); // 2 USDC (6 decimals)
@@ -64,16 +66,15 @@ describe("Reclaim Expired Escrow", () => {
       );
       console.log("✅ 10 USDC minted to sender");
 
-      // Generate PDA for escrow account
-      [escrowPDA, escrowBump] = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from("escrow"),
-          payer.publicKey.toBuffer(),
-          Buffer.from(RECIPIENT_EMAIL_HASH)
-        ],
+      // Find next available nonce and generate PDA
+      escrowNonce = await findNextNonce(payer.publicKey, RECIPIENT_EMAIL_HASH, program);
+      [escrowPDA, escrowBump] = getEscrowPDA(
+        payer.publicKey,
+        RECIPIENT_EMAIL_HASH,
+        escrowNonce,
         program.programId
       );
-      console.log("✅ Escrow PDA:", escrowPDA.toString(), "bump:", escrowBump);
+      console.log("✅ Escrow PDA:", escrowPDA.toString(), "bump:", escrowBump, "nonce:", escrowNonce);
 
       escrowTokenAccount = await getAssociatedTokenAddress(
         tokenMint,
@@ -103,7 +104,8 @@ describe("Reclaim Expired Escrow", () => {
         .initializeEscrow(
           ESCROW_AMOUNT,
           RECIPIENT_EMAIL_HASH,
-          expiresAt
+          expiresAt,
+          new BN(escrowNonce)
         )
         .accounts({
           escrowAccount: escrowPDA,
@@ -217,12 +219,11 @@ describe("Reclaim Expired Escrow", () => {
         crypto.createHash('sha256').update(newEmail.toLowerCase().trim()).digest()
       );
       
-      const [newEscrowPDA] = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from("escrow"),
-          payer.publicKey.toBuffer(),
-          Buffer.from(newEmailHash)
-        ],
+      const newNonce = await findNextNonce(payer.publicKey, newEmailHash, program);
+      const [newEscrowPDA] = getEscrowPDA(
+        payer.publicKey,
+        newEmailHash,
+        newNonce,
         program.programId
       );
 
@@ -238,7 +239,8 @@ describe("Reclaim Expired Escrow", () => {
         .initializeEscrow(
           ESCROW_AMOUNT,
           newEmailHash,
-          futureExpiresAt
+          futureExpiresAt,
+          new BN(newNonce)
         )
         .accounts({
           escrowAccount: newEscrowPDA,

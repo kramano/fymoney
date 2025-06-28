@@ -46,3 +46,4 @@ app/.env.example
 .vercel
 
 docs
+/.claude/

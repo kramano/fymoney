@@ -13,6 +13,7 @@ pub mod fymoney {
         amount: u64,
         recipient_email_hash: [u8; 32],
         expires_at: i64,
+        nonce: u64,
     ) -> Result<()> {
         let escrow = &mut ctx.accounts.escrow_account;
         let clock = Clock::get()?;
@@ -38,6 +39,7 @@ pub mod fymoney {
         escrow.created_at = clock.unix_timestamp;
         escrow.expires_at = expires_at;
         escrow.status = EscrowStatus::Active;
+        escrow.nonce = nonce;
         escrow.bump = ctx.bumps.escrow_account;
 
         // Transfer tokens from sender to escrow
@@ -66,7 +68,7 @@ pub mod fymoney {
         let recipient_wallet = ctx.accounts.recipient.key();
 
         // Extract values we need before any mutable borrows
-        let (amount, created_at_bytes, sender, recipient_email_hash, bump) = {
+        let (amount, sender, recipient_email_hash, nonce, bump) = {
             let escrow = &ctx.accounts.escrow_account;
             // Validate escrow state
             require!(
@@ -85,9 +87,9 @@ pub mod fymoney {
 
             (
                 escrow.amount,
-                escrow.created_at.to_le_bytes(),
                 escrow.sender,
                 escrow.recipient_email_hash,
+                escrow.nonce,
                 escrow.bump,
             )
         };
@@ -100,10 +102,12 @@ pub mod fymoney {
         }
 
         // Transfer tokens from escrow to recipient
+        let nonce_bytes = nonce.to_le_bytes();
         let seeds = &[
             b"escrow",
             sender.as_ref(),
             recipient_email_hash.as_ref(),
+            nonce_bytes.as_ref(),
             &[bump],
         ];
         let signer_seeds = &[&seeds[..]];
@@ -132,7 +136,7 @@ pub mod fymoney {
         let clock = Clock::get()?;
 
         // Extract values we need before any mutable borrows
-        let (amount, created_at_bytes, sender, recipient_email_hash, bump) = {
+        let (amount, sender, recipient_email_hash, nonce, bump) = {
             let escrow = &ctx.accounts.escrow_account;
             // Validate escrow state
             require!(
@@ -150,9 +154,9 @@ pub mod fymoney {
 
             (
                 escrow.amount,
-                escrow.created_at.to_le_bytes(),
                 escrow.sender,
                 escrow.recipient_email_hash,
+                escrow.nonce,
                 escrow.bump,
             )
         };
@@ -164,10 +168,12 @@ pub mod fymoney {
         }
 
         // Transfer tokens back to sender
+        let nonce_bytes = nonce.to_le_bytes();
         let seeds = &[
             b"escrow",
             sender.as_ref(),
             recipient_email_hash.as_ref(),
+            nonce_bytes.as_ref(),
             &[bump],
         ];
         let signer_seeds = &[&seeds[..]];
@@ -194,7 +200,7 @@ pub mod fymoney {
 }
 
 #[derive(Accounts)]
-#[instruction(amount: u64, recipient_email_hash: [u8; 32], expires_at: i64)]
+#[instruction(amount: u64, recipient_email_hash: [u8; 32], expires_at: i64, nonce: u64)]
 pub struct InitializeEscrow<'info> {
     #[account(
         init,
@@ -203,7 +209,8 @@ pub struct InitializeEscrow<'info> {
         seeds = [
             b"escrow",
             sender.key().as_ref(),
-            recipient_email_hash.as_ref()
+            recipient_email_hash.as_ref(),
+            nonce.to_le_bytes().as_ref()
         ],
         bump
     )]
@@ -242,7 +249,8 @@ pub struct ClaimEscrow<'info> {
         seeds = [
             b"escrow",
             escrow_account.sender.as_ref(),
-            escrow_account.recipient_email_hash.as_ref()
+            escrow_account.recipient_email_hash.as_ref(),
+            escrow_account.nonce.to_le_bytes().as_ref()
         ],
         bump = escrow_account.bump
     )]
@@ -282,7 +290,8 @@ pub struct ReclaimExpiredEscrow<'info> {
         seeds = [
             b"escrow",
             escrow_account.sender.as_ref(),
-            escrow_account.recipient_email_hash.as_ref()
+            escrow_account.recipient_email_hash.as_ref(),
+            escrow_account.nonce.to_le_bytes().as_ref()
         ],
         bump = escrow_account.bump
     )]
@@ -324,6 +333,7 @@ pub struct EscrowAccount {
     pub created_at: i64,                  // 8 bytes
     pub expires_at: i64,                  // 8 bytes
     pub status: EscrowStatus,             // 1 byte
+    pub nonce: u64,                       // 8 bytes
     pub bump: u8,                         // 1 byte
 }
 
