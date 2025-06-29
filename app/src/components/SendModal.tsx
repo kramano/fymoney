@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Loader2, Mail, DollarSign, AlertCircle, CheckCircle, User } from "lucide-react";
-import { useSendUsdc } from "@/hooks/useSendUsdc";
+import { useState, useEffect } from "react";
+import { Loader2, Mail, DollarSign, AlertCircle, CheckCircle, User, Shield, Zap, Info } from "lucide-react";
+import { useSendWithEscrow, SendMethod } from "@/hooks/useSendWithEscrow";
 
 interface SendModalProps {
     onClose: () => void;
@@ -13,18 +13,28 @@ const SendModal = ({ onClose, balance, usdcMintAddress, onTransactionSuccess }: 
     const [email, setEmail] = useState("");
     const [amount, setAmount] = useState("");
     const [errors, setErrors] = useState<{ email?: string; amount?: string }>({});
-    const [step, setStep] = useState<'input' | 'confirm'>('input');
+    const [step, setStep] = useState<'input' | 'method' | 'confirm'>('input');
+    const [selectedMethod, setSelectedMethod] = useState<SendMethod | null>(null);
+    const [recipientStatus, setRecipientStatus] = useState<'registered' | 'not-registered' | null>(null);
+    const [expirationDays, setExpirationDays] = useState<number>(7);
 
     // Hook handles all the business logic
-    const { sendUsdc, isLoading, error, clearError } = useSendUsdc({
+    const { 
+        sendWithMethod, 
+        checkRecipientStatus, 
+        recommendedMethod, 
+        isLoading, 
+        error, 
+        clearError 
+    } = useSendWithEscrow({
         usdcMintAddress,
-        onSuccess: (signature) => {
-            console.log('USDC sent successfully:', signature);
+        onSuccess: (signature, method) => {
+            console.log(`${method} send successful:`, signature);
             onTransactionSuccess?.();
             onClose();
         },
         onError: (error) => {
-            console.error('USDC send failed:', error);
+            console.error('Send failed:', error);
             // Error handling is done in the hook via toast notifications
         }
     });
@@ -74,12 +84,31 @@ const SendModal = ({ onClose, balance, usdcMintAddress, onTransactionSuccess }: 
 
         if (Object.keys(newErrors).length === 0) {
             if (step === 'input') {
+                // Check recipient status and move to method selection
+                setStep('method');
+                try {
+                    const status = await checkRecipientStatus(email);
+                    setRecipientStatus(status);
+                    // Auto-select recommended method
+                    if (recommendedMethod) {
+                        setSelectedMethod(recommendedMethod);
+                    }
+                } catch (error) {
+                    console.error('Error checking recipient:', error);
+                    setRecipientStatus('not-registered');
+                    setSelectedMethod('escrow');
+                }
+            } else if (step === 'method') {
                 // Move to confirmation step
                 setStep('confirm');
             } else {
                 // Execute transaction
+                if (!selectedMethod) {
+                    setErrors({ email: 'Please select a send method' });
+                    return;
+                }
                 try {
-                    await sendUsdc(email, amount);
+                    await sendWithMethod(email, amount, selectedMethod, expirationDays);
                 } catch (error) {
                     console.error("Send failed:", error);
                 }
@@ -125,8 +154,254 @@ const SendModal = ({ onClose, balance, usdcMintAddress, onTransactionSuccess }: 
     };
 
     const handleBack = () => {
-        setStep('input');
+        if (step === 'confirm') {
+            setStep('method');
+        } else if (step === 'method') {
+            setStep('input');
+        }
     };
+
+    // Reset state when email changes
+    useEffect(() => {
+        setRecipientStatus(null);
+        setSelectedMethod(null);
+        if (step !== 'input') {
+            setStep('input');
+        }
+    }, [email]);
+
+    // Render method selection step
+    if (step === 'method') {
+        return (
+            <div className="fy-space-y-6">
+                {/* Hook-level error display */}
+                {error && (
+                    <div className="fy-alert-error">
+                        {error}
+                    </div>
+                )}
+
+                {/* Method Selection Header */}
+                <div className="fy-text-center">
+                    <h3 className="fy-label" style={{ fontSize: '18px', marginBottom: '8px' }}>Choose Send Method</h3>
+                    <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>How would you like to send {amount} USDC to {email}?</p>
+                </div>
+
+                {/* Recipient Status */}
+                {recipientStatus && (
+                    <div style={{
+                        background: recipientStatus === 'registered' 
+                            ? 'rgba(34, 197, 94, 0.1)' 
+                            : 'rgba(249, 115, 22, 0.1)',
+                        border: `1px solid ${recipientStatus === 'registered' 
+                            ? 'rgba(34, 197, 94, 0.2)' 
+                            : 'rgba(249, 115, 22, 0.2)'}`,
+                        borderRadius: 'var(--radius-small)',
+                        padding: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        <Info style={{ 
+                            height: '16px', 
+                            width: '16px', 
+                            color: recipientStatus === 'registered' ? '#22c55e' : '#f97316'
+                        }} />
+                        <span style={{ fontSize: '14px' }}>
+                            {recipientStatus === 'registered' 
+                                ? 'Recipient has a FyMoney wallet' 
+                                : 'Recipient needs to create a FyMoney wallet'}
+                        </span>
+                    </div>
+                )}
+
+                {/* Method Options */}
+                <div className="fy-space-y-3">
+                    {/* Direct Transfer Option */}
+                    <div 
+                        onClick={() => setSelectedMethod('direct')}
+                        style={{
+                            background: selectedMethod === 'direct' 
+                                ? 'rgba(59, 130, 246, 0.1)' 
+                                : 'var(--gradient-balance)',
+                            border: `2px solid ${selectedMethod === 'direct' 
+                                ? '#3b82f6' 
+                                : 'var(--border-light)'}`,
+                            borderRadius: 'var(--radius-small)',
+                            padding: '16px',
+                            cursor: recipientStatus === 'not-registered' ? 'not-allowed' : 'pointer',
+                            opacity: recipientStatus === 'not-registered' ? 0.5 : 1,
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        <div className="fy-flex" style={{ gap: '12px', alignItems: 'flex-start' }}>
+                            <div style={{
+                                background: selectedMethod === 'direct' ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)',
+                                borderRadius: '50%',
+                                padding: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <Zap style={{ 
+                                    height: '20px', 
+                                    width: '20px', 
+                                    color: selectedMethod === 'direct' ? 'white' : '#3b82f6'
+                                }} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ 
+                                    fontWeight: 600, 
+                                    color: 'var(--text-primary)', 
+                                    marginBottom: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}>
+                                    Instant Transfer
+                                    {recommendedMethod === 'direct' && (
+                                        <span style={{
+                                            background: '#22c55e',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            padding: '2px 6px',
+                                            borderRadius: '4px',
+                                            fontWeight: 600
+                                        }}>RECOMMENDED</span>
+                                    )}
+                                </div>
+                                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Send directly to their wallet immediately</p>
+                                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>✓ Instant delivery • ✓ No expiration</div>
+                                {recipientStatus === 'not-registered' && (
+                                    <div style={{ fontSize: '12px', color: '#ef4444', marginTop: '4px' }}>⚠ Recipient must have a FyMoney wallet</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Escrow Option */}
+                    <div 
+                        onClick={() => setSelectedMethod('escrow')}
+                        style={{
+                            background: selectedMethod === 'escrow' 
+                                ? 'rgba(59, 130, 246, 0.1)' 
+                                : 'var(--gradient-balance)',
+                            border: `2px solid ${selectedMethod === 'escrow' 
+                                ? '#3b82f6' 
+                                : 'var(--border-light)'}`,
+                            borderRadius: 'var(--radius-small)',
+                            padding: '16px',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        <div className="fy-flex" style={{ gap: '12px', alignItems: 'flex-start' }}>
+                            <div style={{
+                                background: selectedMethod === 'escrow' ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)',
+                                borderRadius: '50%',
+                                padding: '8px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}>
+                                <Shield style={{ 
+                                    height: '20px', 
+                                    width: '20px', 
+                                    color: selectedMethod === 'escrow' ? 'white' : '#3b82f6'
+                                }} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ 
+                                    fontWeight: 600, 
+                                    color: 'var(--text-primary)', 
+                                    marginBottom: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px'
+                                }}>
+                                    Secure Escrow
+                                    {recommendedMethod === 'escrow' && (
+                                        <span style={{
+                                            background: '#22c55e',
+                                            color: 'white',
+                                            fontSize: '10px',
+                                            padding: '2px 6px',
+                                            borderRadius: '4px',
+                                            fontWeight: 600
+                                        }}>RECOMMENDED</span>
+                                    )}
+                                </div>
+                                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Hold funds securely until recipient claims</p>
+                                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>✓ Anyone can claim • ✓ Auto-refund if unclaimed</div>
+                                {selectedMethod === 'escrow' && (
+                                    <div style={{ marginTop: '12px' }}>
+                                        <label style={{ 
+                                            fontSize: '14px', 
+                                            fontWeight: 600, 
+                                            color: 'var(--text-primary)',
+                                            marginBottom: '8px',
+                                            display: 'block'
+                                        }}>Expiration</label>
+                                        <select
+                                            value={expirationDays}
+                                            onChange={(e) => setExpirationDays(Number(e.target.value))}
+                                            style={{
+                                                width: '100%',
+                                                padding: '8px 12px',
+                                                borderRadius: 'var(--radius-small)',
+                                                border: '1px solid var(--border-light)',
+                                                background: 'var(--background)',
+                                                color: 'var(--text-primary)',
+                                                fontSize: '14px'
+                                            }}
+                                        >
+                                            <option value={1}>1 day</option>
+                                            <option value={3}>3 days</option>
+                                            <option value={7}>7 days</option>
+                                            <option value={14}>14 days</option>
+                                            <option value={30}>30 days</option>
+                                        </select>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="fy-flex fy-gap-3" style={{ paddingTop: '16px' }}>
+                    <button
+                        type="button"
+                        onClick={handleBack}
+                        className="fy-button-secondary"
+                        style={{ flex: 1, height: '48px' }}
+                        disabled={isLoading}
+                    >
+                        Back
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleSubmit}
+                        className="fy-button-primary"
+                        style={{ flex: 1, height: '48px' }}
+                        disabled={isLoading || !selectedMethod || (selectedMethod === 'direct' && recipientStatus === 'not-registered')}
+                    >
+                        {isLoading ? (
+                            <>
+                                <Loader2 style={{ height: '16px', width: '16px', marginRight: '8px' }} className="animate-spin" />
+                                Processing...
+                            </>
+                        ) : (
+                            <>
+                                <CheckCircle style={{ height: '16px', width: '16px', marginRight: '8px' }} />
+                                Continue
+                            </>
+                        )}
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     // Render confirmation step
     if (step === 'confirm') {
@@ -181,11 +456,32 @@ const SendModal = ({ onClose, balance, usdcMintAddress, onTransactionSuccess }: 
                     padding: '16px'
                 }}>
                     <h4 style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>Transaction Details</h4>
-                    <div style={{ fontSize: '14px' }}>
-                        <div className="fy-flex-between" style={{ fontWeight: 600 }}>
+                    <div style={{ fontSize: '14px', gap: '8px' }}>
+                        <div className="fy-flex-between" style={{ fontWeight: 600, marginBottom: '8px' }}>
                             <span>Amount:</span>
                             <span>{amount} USDC</span>
                         </div>
+                        <div className="fy-flex-between" style={{ marginBottom: '8px' }}>
+                            <span>Method:</span>
+                            <span style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '6px',
+                                fontWeight: 600
+                            }}>
+                                {selectedMethod === 'direct' ? (
+                                    <><Zap style={{ height: '14px', width: '14px' }} /> Instant Transfer</>
+                                ) : (
+                                    <><Shield style={{ height: '14px', width: '14px' }} /> Secure Escrow</>
+                                )}
+                            </span>
+                        </div>
+                        {selectedMethod === 'escrow' && (
+                            <div className="fy-flex-between">
+                                <span>Expires in:</span>
+                                <span>{expirationDays} {expirationDays === 1 ? 'day' : 'days'}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -214,8 +510,11 @@ const SendModal = ({ onClose, balance, usdcMintAddress, onTransactionSuccess }: 
                             </>
                         ) : (
                             <>
-                                <DollarSign style={{ height: '16px', width: '16px', marginRight: '8px' }} />
-                                Send USDC
+                                {selectedMethod === 'direct' ? (
+                                    <><Zap style={{ height: '16px', width: '16px', marginRight: '8px' }} />Send Now</>
+                                ) : (
+                                    <><Shield style={{ height: '16px', width: '16px', marginRight: '8px' }} />Create Escrow</>
+                                )}
                             </>
                         )}
                     </button>

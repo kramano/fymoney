@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 
-export type ModalType = 'send' | 'receive' | 'earn' | 'settings' | null;
+export type ModalType = 'send' | 'receive' | 'earn' | 'settings' | 'escrows' | null;
 
 export const useModalState = () => {
   const [activeModal, setActiveModal] = useState<ModalType>(null);

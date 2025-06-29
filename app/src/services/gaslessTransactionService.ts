@@ -121,54 +121,6 @@ export class GaslessTransactionService {
       throw new Error('Transaction failed. Please try again.');
     }
   }
-
-  /**
-   * Check if gasless transactions are available
-   */
-  static async isGaslessAvailable(): Promise<boolean> {
-    try {
-      if (!FeePayerWallet.isGaslessEnabled()) {
-        console.log('⚠️ Gasless disabled in environment');
-        return false;
-      }
-
-      // Check if fee payer wallet has sufficient SOL
-      const feePayer = FeePayerWallet.getFeePayerKeypair();
-      const balance = await this.connection.getBalance(feePayer.publicKey);
-      
-      console.log('💰 Fee payer SOL balance:', balance / 1e9, 'SOL');
-      
-      // Require at least 0.01 SOL for fees
-      const hasMinimumBalance = balance >= 10_000_000; // 0.01 SOL in lamports
-      
-      if (!hasMinimumBalance) {
-        console.warn('⚠️ Fee payer wallet has insufficient SOL for gas fees');
-      }
-
-      return hasMinimumBalance;
-    } catch (error) {
-      console.error('❌ Error checking gasless availability:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Get fee payer wallet info (for monitoring)
-   */
-  static async getFeePayerInfo(): Promise<{
-    publicKey: string;
-    balance: number;
-    balanceSOL: number;
-  }> {
-    const feePayer = FeePayerWallet.getFeePayerKeypair();
-    const balance = await this.connection.getBalance(feePayer.publicKey);
-
-    return {
-      publicKey: feePayer.publicKey.toString(),
-      balance,
-      balanceSOL: balance / 1e9
-    };
-  }
 }
 
 export default GaslessTransactionService;

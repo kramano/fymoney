@@ -2,12 +2,12 @@ use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer, Mint};
 
-declare_id!("31HHr5jwk8woZF1GQthtBSkh2a7TvcbgamhTATYuDw9Z");
+declare_id!("9PbXHvSA4k86YpoJonchC9LHaFNuGv7XiEf8MdD4ZYNp");
 
 #[program]
 pub mod fymoney {
     use super::*;
-    
+
     pub fn initialize_escrow(
         ctx: Context<InitializeEscrow>,
         amount: u64,
@@ -204,7 +204,7 @@ pub mod fymoney {
 pub struct InitializeEscrow<'info> {
     #[account(
         init,
-        payer = sender,
+        payer = fee_payer,
         space = 8 + EscrowAccount::INIT_SPACE,
         seeds = [
             b"escrow",
@@ -217,8 +217,8 @@ pub struct InitializeEscrow<'info> {
     pub escrow_account: Account<'info, EscrowAccount>,
 
     #[account(
-        init,
-        payer = sender,
+        init_if_needed,
+        payer = fee_payer,
         associated_token::mint = token_mint,
         associated_token::authority = escrow_account
     )]
@@ -233,8 +233,10 @@ pub struct InitializeEscrow<'info> {
 
     pub token_mint: Account<'info, Mint>,
 
-    #[account(mut)]
     pub sender: Signer<'info>,
+
+    #[account(mut)]
+    pub fee_payer: Signer<'info>,
 
     pub token_program: Program<'info, Token>,
     pub associated_token_program: Program<'info, AssociatedToken>,

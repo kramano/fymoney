@@ -120,8 +120,16 @@ const WalletCard = ({ onAction, usdcBalance = 97.00 }: WalletCardProps) => {
           <span className="fy-button-icon">+</span>
           Top Up
         </button>
-      </div>
 
+        <button
+          onClick={() => onAction("escrows")}
+          className="fy-action-button fy-escrow-btn"
+        >
+          <span className="fy-button-icon">🛡</span>
+          My Escrows
+        </button>
+      </div>
+Thi
       {/* Footer */}
       <div className="fy-footer">
         <p className="fy-footer-text">

@@ -238,6 +238,12 @@ html, body, #root, [data-reactroot] {
 .fy-topup-btn {
   background: var(--gradient-topup);
   color: white;
+}
+
+.fy-escrow-btn {
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  color: white;
+  border: 1px solid #5B21B6;
   margin-bottom: 24px;
 }
 

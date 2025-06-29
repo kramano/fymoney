@@ -113,6 +113,7 @@ describe("Reclaim Expired Escrow", () => {
           senderTokenAccount: senderTokenAccount,
           tokenMint: tokenMint,
           sender: payer.publicKey,
+          feePayer: payer.publicKey,
           tokenProgram: TOKEN_PROGRAM_ID,
           associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
           systemProgram: SystemProgram.programId,

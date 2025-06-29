@@ -6,13 +6,16 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-fymoney = "31HHr5jwk8woZF1GQthtBSkh2a7TvcbgamhTATYuDw9Z"
+fymoney = "9PbXHvSA4k86YpoJonchC9LHaFNuGv7XiEf8MdD4ZYNp"
+
+[programs.devnet]
+fymoney = "9PbXHvSA4k86YpoJonchC9LHaFNuGv7XiEf8MdD4ZYNp"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
