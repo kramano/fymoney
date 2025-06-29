@@ -5,11 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { Copy, Mail, Check, Clock, Send, Loader2 } from "lucide-react";
 import TransferIntentService, { UnclaimedTransfer } from "@/services/transferService";
 import EmailNotificationService, { PaymentRequestData } from "@/services/emailNotificationService";
+import { useClaimTransfer } from "@/hooks/useClaimTransfer";
 
 interface ReceiveModalProps {
   onClose: () => void;
   userEmail: string;
   walletAddress: string;
+  onTransactionSuccess?: () => void;
 }
 
 interface PaymentRequest {
@@ -18,7 +20,7 @@ interface PaymentRequest {
   message: string;
 }
 
-const ReceiveModal = ({ onClose, userEmail, walletAddress }: ReceiveModalProps) => {
+const ReceiveModal = ({ onClose, userEmail, walletAddress, onTransactionSuccess }: ReceiveModalProps) => {
   const { user } = useDynamicContext();
   const [activeTab, setActiveTab] = useState<'unclaimed' | 'email'>('email');
   const [unclaimedTransfers, setUnclaimedTransfers] = useState<UnclaimedTransfer[]>([]);
@@ -28,11 +30,14 @@ const ReceiveModal = ({ onClose, userEmail, walletAddress }: ReceiveModalProps) 
     amount: '',
     message: ''
   });
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [isLoadingUnclaimed, setIsLoadingUnclaimed] = useState(true);
   const [isSendingRequest, setIsSendingRequest] = useState(false);
+  const [claimingTransfers, setClaimingTransfers] = useState<Set<string>>(new Set());
+
+  // Use the claim transfer hook
+  const { claimTransfer, isLoading: isClaimLoading, error: claimError, clearError: clearClaimError } = useClaimTransfer();
 
   // Fetch unclaimed transfers on mount
   useEffect(() => {
@@ -59,19 +64,42 @@ const ReceiveModal = ({ onClose, userEmail, walletAddress }: ReceiveModalProps) 
 
   const handleClaimTransfer = async (transferId: string) => {
     try {
-      setIsLoading(true);
+      // Track which transfer is being claimed
+      setClaimingTransfers(prev => new Set(prev).add(transferId));
       setError(null);
+      clearClaimError();
       
-      const result = await TransferIntentService.claimTransfer(transferId, walletAddress);
+      console.log('🎯 Claiming transfer:', transferId);
+      const result = await claimTransfer(transferId);
       
-      if (!result.success) {
+      if (result.success) {
+        console.log('🎉 Transfer claimed successfully!', result.txHash);
+        
+        // Refresh unclaimed transfers list
+        const refreshResult = await TransferIntentService.getUnclaimedTransfersByEmail(userEmail);
+        setUnclaimedTransfers(refreshResult.transfers);
+        setTotalUnclaimedAmount(refreshResult.totalAmount);
+        
+        // Call success callback to refresh wallet balance
+        if (onTransactionSuccess) {
+          onTransactionSuccess();
+        }
+        
+        // Show success message
+        alert(`Transfer claimed successfully! Transaction: ${result.txHash}`);
+      } else {
         setError(result.error || 'Failed to claim transfer');
       }
     } catch (error) {
       console.error('Failed to claim transfer:', error);
       setError('Failed to claim transfer');
     } finally {
-      setIsLoading(false);
+      // Remove from claiming set
+      setClaimingTransfers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(transferId);
+        return newSet;
+      });
     }
   };
 
@@ -259,24 +287,24 @@ const ReceiveModal = ({ onClose, userEmail, walletAddress }: ReceiveModalProps) 
 
                     <button 
                       onClick={() => handleClaimTransfer(transfer.id)}
-                      disabled={isLoading}
+                      disabled={claimingTransfers.has(transfer.id) || isClaimLoading}
                       className="fy-button-primary"
                       style={{ 
                         width: '100%', 
                         height: '32px',
                         fontSize: '12px',
-                        background: isLoading ? '#9ca3af' : '#dc2626',
-                        cursor: isLoading ? 'not-allowed' : 'not-allowed', // Always disabled for now
-                        opacity: 0.6
+                        background: claimingTransfers.has(transfer.id) || isClaimLoading ? '#9ca3af' : '#dc2626',
+                        cursor: claimingTransfers.has(transfer.id) || isClaimLoading ? 'not-allowed' : 'pointer',
+                        opacity: claimingTransfers.has(transfer.id) || isClaimLoading ? 0.6 : 1
                       }}
                     >
-                      {isLoading ? (
+                      {claimingTransfers.has(transfer.id) ? (
                         <>
                           <Loader2 style={{ width: '12px', height: '12px', marginRight: '6px' }} className="animate-spin" />
-                          Processing...
+                          Claiming...
                         </>
                       ) : (
-                        'Claim Coming Soon'
+                        `Claim $${parseFloat(transfer.amount.toString()).toFixed(2)}`
                       )}
                     </button>
                   </div>
@@ -383,9 +411,9 @@ const ReceiveModal = ({ onClose, userEmail, walletAddress }: ReceiveModalProps) 
       </Tabs>
 
       {/* Error display */}
-      {error && (
+      {(error || claimError) && (
         <div className="fy-alert-error">
-          {error}
+          {error || claimError}
         </div>
       )}
 

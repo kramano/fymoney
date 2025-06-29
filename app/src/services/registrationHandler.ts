@@ -1,22 +1,21 @@
-// Service to handle user registration when embedded wallet is created
+// Service to handle Dynamic SDK events
+// Note: Actual registration is handled by the useAutoRegistration hook
+// These event handlers are mainly for logging and debugging
 import { isSolanaWallet } from '@dynamic-labs/solana';
-import EmailWalletService from '@/services/emailWallet';
-
-// Track registration attempts to prevent duplicates
-const registrationAttempts = new Set<string>();
 
 /**
- * Handle authentication success event and register user
- * This should be called from Dynamic SDK's onAuthSuccess event
+ * Handle authentication success event 
+ * Note: This event typically fires before embedded wallets are created,
+ * so we rely on the useAutoRegistration hook for actual registration
  */
 export const handleAuthSuccess = async (args: any) => {
   console.log('🎉 onAuthSuccess event triggered');
   console.log('📋 Auth args:', args);
   
-  // Extract data from onAuthSuccess args
+  // Extract data from onAuthSuccess args (primaryWallet is often null here)
   const { user, primaryWallet, isAuthenticated } = args;
   
-  console.log('🔍 Extracted wallet info:', {
+  console.log('🔍 Auth success info:', {
     email: user?.email,
     walletAddress: primaryWallet?.address,
     walletType: primaryWallet?.connector?.name,
@@ -24,54 +23,33 @@ export const handleAuthSuccess = async (args: any) => {
     isAuthenticated
   });
   
-  if (isAuthenticated && user?.email && primaryWallet?.address && isSolanaWallet(primaryWallet)) {
-    // Create unique key for this email-wallet combination
-    const registrationKey = `${user.email}-${primaryWallet.address}`;
-    
-    // Check if we've already attempted registration for this combination
-    if (registrationAttempts.has(registrationKey)) {
-      console.log('⏭️ Registration already attempted for:', registrationKey);
-      return;
-    }
-    
-    console.log('🚀 Starting registration process for:', registrationKey);
-    
-    // Mark as attempting registration
-    registrationAttempts.add(registrationKey);
-    
-    try {
-      console.log('📞 Calling EmailWalletService.registerEmailWallet...');
-      
-      const registrationInfo = await EmailWalletService.registerEmailWallet({
-        email: user.email,
-        walletAddress: primaryWallet.address
-      });
-      
-      console.log('✅ User registered successfully via auth success event:', registrationInfo);
-    } catch (error) {
-      console.error('❌ Failed to register user via auth success event:', error);
-      // Remove from attempts set on failure so it can be retried
-      registrationAttempts.delete(registrationKey);
-    }
+  // Note: We don't attempt registration here because primaryWallet is usually null
+  // The useAutoRegistration hook will handle registration when the wallet becomes available
+  if (isAuthenticated && user?.email) {
+    console.log('✅ User authenticated with email, registration will be handled by useAutoRegistration hook');
   } else {
-    console.log('⏭️ Skipping registration - missing required data or not Solana wallet:', {
-      isAuthenticated,
-      hasEmail: !!user?.email,
-      hasWallet: !!primaryWallet?.address,
-      isSolana: primaryWallet ? isSolanaWallet(primaryWallet) : false
-    });
+    console.log('⏭️ Auth success but missing required data');
   }
 };
 
 /**
- * Clear registration attempts (for testing purposes)
+ * Handle embedded wallet creation event
+ * Note: This event may also not have reliable access to wallet info in args,
+ * so we primarily rely on the useAutoRegistration hook for registration
  */
-export const clearRegistrationAttempts = () => {
-  registrationAttempts.clear();
-  console.log('🧹 Registration attempts cleared');
+export const handleEmbeddedWalletCreated = async (args: any) => {
+  console.log('🔗 onEmbeddedWalletCreated event triggered');
+  console.log('📋 Wallet creation args:', args);
+  
+  // Log whatever data we get from the event
+  console.log('🔍 Embedded wallet creation info:', args);
+  
+  // Note: We don't attempt registration directly here either
+  // The useAutoRegistration hook will handle registration more reliably
+  console.log('✅ Embedded wallet creation event received, registration handled by useAutoRegistration hook');
 };
 
 export default {
   handleAuthSuccess,
-  clearRegistrationAttempts
+  handleEmbeddedWalletCreated
 };

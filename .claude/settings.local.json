@@ -10,7 +10,13 @@
       "Bash(rg:*)",
       "Bash(cp:*)",
       "Bash(npx ts-mocha:*)",
-      "Bash(solana config:*)"
+      "Bash(solana config:*)",
+      "Bash(anchor idl:*)",
+      "Bash(anchor types)",
+      "Bash(anchor:*)",
+      "Bash(rm:*)",
+      "Bash(npx tsc:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

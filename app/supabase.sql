@@ -39,6 +39,7 @@ create table transfer_intents (
     -- Blockchain data
                                   creation_tx_hash text, -- Transaction that created the escrow
                                   claim_tx_hash text,    -- Transaction that claimed the funds
+                                  escrow_pda text,       -- Escrow Program Derived Address for claims
 
     -- Timing
                                   expires_at timestamp not null default (now() + interval '7 days'),
@@ -148,3 +149,4 @@ where status = 'pending'
   and expires_at < now();
 end;
 $$ language plpgsql;
+

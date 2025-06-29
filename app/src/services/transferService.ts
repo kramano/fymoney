@@ -13,6 +13,7 @@ export interface TransferIntent {
     createdAt: string;
     claimedAt?: string;
     expiresAt: string;
+    escrowPda?: string; // Optional for backward compatibility
 }
 
 export interface CreateTransferIntentParams {
@@ -20,6 +21,7 @@ export interface CreateTransferIntentParams {
     senderEmail?: string; // Optional sender email
     recipientEmail: string;
     amount: number; // Amount in USDC base units (6 decimals)
+    escrowPda?: string; // Optional escrow PDA (required for new escrow-backed transfers)
 }
 
 export interface UnclaimedTransfer {
@@ -39,12 +41,13 @@ export class TransferIntentService {
      * Create a new transfer intent for an unregistered recipient
      */
     static async createTransferIntent(params: CreateTransferIntentParams): Promise<TransferIntent> {
-        const { senderWalletAddress, senderEmail, recipientEmail, amount } = params;
+        const { senderWalletAddress, senderEmail, recipientEmail, amount, escrowPda } = params;
 
         console.log('🎯 Creating transfer intent:', {
             sender: senderWalletAddress,
             recipient: recipientEmail,
-            amount: amount / 1_000_000 // Log in USDC units for readability
+            amount: amount / 1_000_000, // Log in USDC units for readability
+            escrowPda
         });
 
         try {
@@ -61,7 +64,8 @@ export class TransferIntentService {
                     token_symbol: 'USDC',
                     amount: amount / 1_000_000, // Convert to USDC units (numeric with 6 decimals)
                     status: 'pending',
-                    expires_at: expiresAt.toISOString()
+                    expires_at: expiresAt.toISOString(),
+                    escrow_pda: escrowPda || null
                 })
                 .select()
                 .single();
@@ -84,7 +88,8 @@ export class TransferIntentService {
                 status: data.status,
                 createdAt: data.created_at,
                 claimedAt: data.claimed_at,
-                expiresAt: data.expires_at
+                expiresAt: data.expires_at,
+                escrowPda: data.escrow_pda
             };
 
             // Send invitation email automatically
@@ -149,13 +154,14 @@ export class TransferIntentService {
 
             return data.map(item => ({
                 id: item.id,
-                senderWalletAddress: item.sender_wallet_address,
+                senderWalletAddress: item.sender_wallet,
                 recipientEmail: item.recipient_email,
-                amount: item.amount_usdc,
+                amount: item.amount,
                 status: item.status,
                 createdAt: item.created_at,
                 claimedAt: item.claimed_at,
-                expiresAt: item.expires_at
+                expiresAt: item.expires_at,
+                escrowPda: item.escrow_pda
             }));
         } catch (error) {
             if (error instanceof TransferIntentError) {
@@ -171,32 +177,56 @@ export class TransferIntentService {
     }
 
     /**
-     * Claim a transfer intent (to be implemented when claiming flow is built)
+     * Claim a transfer intent - marks as claimed in database after on-chain confirmation
      */
-    static async claimTransferIntent(intentId: string, recipientWallet: string): Promise<boolean> {
+    static async claimTransferIntent(intentId: string, recipientWallet: string, txHash?: string): Promise<{
+        success: boolean;
+        error?: string;
+    }> {
         try {
+            const updateData: Record<string, unknown> = {
+                status: 'claimed',
+                claimed_at: new Date().toISOString(),
+                claimed_by_wallet: recipientWallet
+            };
+
+            // Add transaction hash if provided
+            if (txHash) {
+                updateData.claim_tx_hash = txHash;
+            }
+
             const { data, error } = await supabase
                 .from('transfer_intents')
-                .update({
-                    status: 'claimed',
-                    claimed_at: new Date().toISOString(),
-                    claimed_by_wallet: recipientWallet
-                })
+                .update(updateData)
                 .eq('id', intentId)
                 .eq('status', 'pending')
                 .select()
                 .single();
 
-            if (error || !data) {
+            if (error) {
                 console.error('❌ Supabase error claiming transfer intent:', error);
-                return false;
+                return {
+                    success: false,
+                    error: error.message || 'Database update failed'
+                };
             }
 
-            console.log('✅ Transfer intent claimed successfully:', intentId);
-            return true;
+            if (!data) {
+                console.error('❌ No transfer intent found or already claimed:', intentId);
+                return {
+                    success: false,
+                    error: 'Transfer not found or already claimed'
+                };
+            }
+
+            console.log('✅ Transfer intent claimed successfully:', { intentId, txHash });
+            return { success: true };
         } catch (error) {
             console.error('❌ Failed to claim transfer intent:', error);
-            return false;
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Unknown error'
+            };
         }
     }
 
@@ -223,7 +253,8 @@ export class TransferIntentService {
                 status: data.status,
                 createdAt: data.created_at,
                 claimedAt: data.claimed_at,
-                expiresAt: data.expires_at
+                expiresAt: data.expires_at,
+                escrowPda: data.escrow_pda
             };
         } catch (error) {
             console.error('❌ Failed to get transfer intent:', error);
@@ -309,22 +340,6 @@ export class TransferIntentService {
         }
     }
 
-    /**
-     * Claim transfer (non-functional for now)
-     */
-    static async claimTransfer(transferId: string, walletAddress: string): Promise<{
-        success: boolean;
-        txHash?: string;
-        error?: string;
-    }> {
-        // NON-FUNCTIONAL FOR NOW - just return success: false
-        console.log('🚧 Claim transfer called but not yet implemented:', { transferId, walletAddress });
-        
-        return { 
-            success: false, 
-            error: "Claiming not yet implemented" 
-        };
-    }
 }
 
 // Error class for transfer intent operations

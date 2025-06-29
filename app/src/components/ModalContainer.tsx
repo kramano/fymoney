@@ -4,7 +4,6 @@ import SendModal from './SendModal';
 import ReceiveModal from './ReceiveModal';
 import EarnModal from './EarnModal';
 import SettingsModal from './SettingsModal';
-import EscrowModal from './EscrowModal';
 import { ModalType } from '@/hooks/useModalState';
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 
@@ -50,6 +49,7 @@ const ModalContainer = ({
                     onClose={onClose} 
                     userEmail={userEmail}
                     walletAddress={walletAddress}
+                    onTransactionSuccess={onTransactionSuccess}
                 />
             </Modal>
 
@@ -63,10 +63,6 @@ const ModalContainer = ({
                 <SettingsModal onClose={onClose} />
             </Modal>
 
-            {/* Escrows Modal */}
-            <Modal isOpen={activeModal === "escrows"} onClose={onClose} title="My Escrows">
-                <EscrowModal onClose={onClose} />
-            </Modal>
         </>
     );
 };

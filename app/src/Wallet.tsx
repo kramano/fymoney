@@ -13,6 +13,7 @@ import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { useWalletValidation } from "@/hooks/useWalletValidation";
 import { useModalState } from "@/hooks/useModalState";
 import { useFundingActions } from "@/hooks/useFundingActions";
+import { useAutoRegistration } from "@/hooks/useAutoRegistration";
 import { WALLET_ACTIONS, type WalletAction } from "@/constants/wallet";
 import { ENV_CONFIG } from "@/config/environment";
 import { Toaster } from "@/components/ui/toaster";
@@ -26,6 +27,9 @@ const Wallet = () => {
     const { balance: usdcBalance, isLoading: isLoadingBalance, refetch: refetchBalance } = useWalletBalance(ENV_CONFIG.usdcMintAddress);
     const { activeModal, openModal, closeModal } = useModalState();
     const { handleTopUp, result, error, clearResults, hasResults } = useFundingActions();
+    
+    // Auto-registration backup mechanism
+    useAutoRegistration();
     
     // Loading state (registration now handled via Dynamic events in App.tsx)
     const isComponentLoading = !sdkHasLoaded || !isLoggedIn || !primaryWallet || isLoadingBalance;

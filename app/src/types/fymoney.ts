@@ -5,7 +5,7 @@
  * IDL can be found at `target/idl/fymoney.json`.
  */
 export type Fymoney = {
-  "address": "31HHr5jwk8woZF1GQthtBSkh2a7TvcbgamhTATYuDw9Z",
+  "address": "9PbXHvSA4k86YpoJonchC9LHaFNuGv7XiEf8MdD4ZYNp",
   "metadata": {
     "name": "fymoney",
     "version": "0.1.0",
@@ -496,6 +496,10 @@ export type Fymoney = {
         },
         {
           "name": "sender",
+          "signer": true
+        },
+        {
+          "name": "feePayer",
           "writable": true,
           "signer": true
         },

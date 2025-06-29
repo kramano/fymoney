@@ -3,7 +3,6 @@ export const WALLET_ACTIONS = {
   RECEIVE: "receive", 
   EARN: "earn",
   TOPUP: "topup",
-  ESCROWS: "escrows",
   SETTINGS: "settings",
 } as const;
 
