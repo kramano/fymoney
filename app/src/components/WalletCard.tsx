@@ -1,6 +1,9 @@
 
+import { useState, useEffect } from 'react';
 import { WalletAction } from "@/constants/wallet";
 import { useVault } from "@/hooks/useVault";
+import { APYService, Protocol } from "@/services/apyService";
+import { SimpleRebalancingService } from "@/services/simpleRebalancingService";
 
 interface WalletCardProps {
   onAction: (action: WalletAction) => void;
@@ -9,11 +12,43 @@ interface WalletCardProps {
 
 const WalletCard = ({ onAction, usdcBalance = 97.00 }: WalletCardProps) => {
   const { userBalance: vaultBalance, hasDeposit } = useVault();
+  const [currentProtocol, setCurrentProtocol] = useState<Protocol>({
+    name: 'Kamino Finance',
+    apy: 5.5,
+    emoji: '🏦',
+    risk: 'Low'
+  });
   
-  // Calculate daily earnings from vault balance (5.5% APY)
+  // Calculate daily earnings from vault balance using current protocol APY
   const vaultBalanceUsdc = vaultBalance / 1_000_000; // Convert from lamports
-  const dailyEarnings = vaultBalanceUsdc * 0.055 / 365;
-  const apy = "5.5%";
+  const dailyEarnings = vaultBalanceUsdc * (currentProtocol.apy / 100) / 365;
+  const apy = `${currentProtocol.apy.toFixed(1)}%`;
+
+  // Load current protocol and listen for rebalancing events
+  useEffect(() => {
+    const loadCurrentProtocol = async () => {
+      try {
+        // Try to get current protocol from rebalancing service first
+        const rebalancingProtocol = SimpleRebalancingService.getCurrentProtocol();
+        if (rebalancingProtocol) {
+          setCurrentProtocol(rebalancingProtocol);
+        } else {
+          // Fallback to getting best protocol
+          const bestProtocol = await APYService.getBestProtocol();
+          setCurrentProtocol(bestProtocol);
+        }
+      } catch (error) {
+        console.error('Failed to load current protocol:', error);
+      }
+    };
+
+    loadCurrentProtocol();
+    
+    // Refresh protocol info every 30 seconds to catch rebalancing updates
+    const interval = setInterval(loadCurrentProtocol, 30000);
+    
+    return () => clearInterval(interval);
+  }, [vaultBalance]);
 
   return (
     <div className="fy-wallet-card glass-container" style={{ position: 'relative' }}>
