@@ -7,15 +7,17 @@ skip-lint = false
 
 [programs.localnet]
 fymoney = "9PbXHvSA4k86YpoJonchC9LHaFNuGv7XiEf8MdD4ZYNp"
+yield_vault = "4ccPktiGRVAS5vmuPj8W7CcR534mQn88KmtHaMTdeQVs"
 
 [programs.devnet]
 fymoney = "9PbXHvSA4k86YpoJonchC9LHaFNuGv7XiEf8MdD4ZYNp"
+yield_vault = "4ccPktiGRVAS5vmuPj8W7CcR534mQn88KmtHaMTdeQVs"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]

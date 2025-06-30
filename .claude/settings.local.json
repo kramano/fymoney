@@ -16,7 +16,8 @@
       "Bash(anchor:*)",
       "Bash(rm:*)",
       "Bash(npx tsc:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

@@ -95,7 +95,7 @@ VITE_RESEND_API_KEY=your_resend_key
 - Sends invitation emails via Resend API
 - Handles claiming workflow (partially implemented)
 
-### GaslessTransactionService (`app/src/services/gaslessTransactionService.ts`)
+### TransactionService (`app/src/services/transactionService.ts`)
 - Fee payer wallet management for gasless USDC transfers
 - Handles transaction fees for user transactions
 

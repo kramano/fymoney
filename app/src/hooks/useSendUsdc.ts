@@ -5,7 +5,7 @@ import {useDynamicContext} from '@dynamic-labs/sdk-react-core';
 import {isSolanaWallet} from '@dynamic-labs/solana';
 import {useToast} from '@/hooks/use-toast';
 import EmailResolver from '@/services/emailResolver';
-import GaslessTransactionService from '@/services/gaslessTransactionService';
+import TransactionService from '@/services/transactionService.ts';
 import TransferIntentService from '@/services/transferService';
 
 export interface UseSendUsdcOptions {
@@ -82,7 +82,7 @@ export const useSendUsdc = (options: UseSendUsdcOptions = {}): UseSendUsdcReturn
                 console.log('🎯 Creating direct transfer...');
 
                 // Create gasless transaction
-                const gaslessTransaction = await GaslessTransactionService.createGaslessTransaction({
+                const gaslessTransaction = await TransactionService.createGaslessTransaction({
                     senderAddress: primaryWallet.address,
                     recipientAddress: resolvedAddress,
                     amount: amountInLamports,

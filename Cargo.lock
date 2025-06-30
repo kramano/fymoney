@@ -2867,6 +2867,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "yield_vault"
+version = "0.1.0"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+]
+
+[[package]]
 name = "zerocopy"
 version = "0.8.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"

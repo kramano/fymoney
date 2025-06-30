@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core';
 import { isSolanaWallet } from '@dynamic-labs/solana';
 import TransferIntentService from '@/services/transferService';
-import GaslessTransactionService from '@/services/gaslessTransactionService';
+import TransactionService from '@/services/transactionService.ts';
 
 interface ClaimResult {
   success: boolean;
@@ -51,7 +51,7 @@ export const useClaimTransfer = () => {
       console.log('✅ Transfer validation passed, creating transaction...');
 
       // Step 3: Create claim transaction
-      const transactionResult = await GaslessTransactionService.claimEscrowTransaction(
+      const transactionResult = await TransactionService.claimEscrowTransaction(
         transferIntent.escrowPda,
         primaryWallet.address
       );

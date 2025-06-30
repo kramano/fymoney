@@ -1,5 +1,6 @@
 
 import { WalletAction } from "@/constants/wallet";
+import { useVault } from "@/hooks/useVault";
 
 interface WalletCardProps {
   onAction: (action: WalletAction) => void;
@@ -7,8 +8,11 @@ interface WalletCardProps {
 }
 
 const WalletCard = ({ onAction, usdcBalance = 97.00 }: WalletCardProps) => {
-  const isEarning = true;
-  const currentEarning = "+$0.027";
+  const { userBalance: vaultBalance, hasDeposit } = useVault();
+  
+  // Calculate daily earnings from vault balance (5.5% APY)
+  const vaultBalanceUsdc = vaultBalance / 1_000_000; // Convert from lamports
+  const dailyEarnings = vaultBalanceUsdc * 0.055 / 365;
   const apy = "5.5%";
 
   return (
@@ -79,10 +83,10 @@ const WalletCard = ({ onAction, usdcBalance = 97.00 }: WalletCardProps) => {
         <div className="fy-balance-amount">
           ${usdcBalance.toFixed(2)} <span className="fy-balance-currency">USDC</span>
         </div>
-        {isEarning && (
+        {hasDeposit && (
           <div className="fy-earning-status">
             <div className="fy-earning-dot"></div>
-            <span className="fy-earning-text">Earning {currentEarning} ({apy} APY)</span>
+            <span className="fy-earning-text">Earning +${dailyEarnings.toFixed(3)} ({apy} APY)</span>
           </div>
         )}
       </div>

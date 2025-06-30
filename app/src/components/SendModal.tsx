@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Loader2, Mail, DollarSign, AlertCircle, CheckCircle } from "lucide-react";
 import EmailResolver from "@/services/emailResolver";
-import { GaslessTransactionService } from "@/services/gaslessTransactionService";
+import { TransactionService } from "@/services/transactionService.ts";
 import TransferIntentService from "@/services/transferService";
 import { useDynamicContext } from "@dynamic-labs/sdk-react-core";
 import { isSolanaWallet } from "@dynamic-labs/solana";
@@ -87,7 +87,7 @@ const SendModal = ({ onClose, balance, onTransactionSuccess }: SendModalProps) =
             if (isRegistered) {
                 // Direct transfer for registered users
                 const amountInLamports = Math.round(parseFloat(amount) * 1_000_000);
-                const transaction = await GaslessTransactionService.createGaslessTransaction({
+                const transaction = await TransactionService.createGaslessTransaction({
                     senderAddress: primaryWallet.address,
                     recipientAddress: isRegistered,
                     amount: amountInLamports
@@ -109,7 +109,7 @@ const SendModal = ({ onClose, balance, onTransactionSuccess }: SendModalProps) =
             } else {
                 // Step 2: Create escrow for unregistered users
                 const amountInLamports = Math.round(parseFloat(amount) * 1_000_000);
-                const escrowResult = await GaslessTransactionService.createEscrowTransaction({
+                const escrowResult = await TransactionService.createEscrowTransaction({
                     senderAddress: primaryWallet.address,
                     recipientEmail: email,
                     amount: amountInLamports,

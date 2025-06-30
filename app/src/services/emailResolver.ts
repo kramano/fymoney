@@ -151,40 +151,6 @@ export class EmailResolver {
             );
         }
     }
-
-    /**
-     * Validate if an email address exists in our system
-     * Uses Supabase if configured, otherwise checks demo data
-     */
-    static async isEmailRegistered(email: string): Promise<boolean> {
-        try {
-            if (isSupabaseConfigured()) {
-                // Use Supabase service
-                return await EmailWalletService.isEmailRegistered(email);
-            } else {
-                // Fallback to in-memory storage
-                const user = await this.getUserByEmail(email);
-                return user !== null;
-            }
-        } catch (error) {
-            console.error('Error checking email registration:', error);
-            return false;
-        }
-    }
-
-    /**
-     * Get all registered emails (for development/testing purposes)
-     * Note: Only works with fallback in-memory storage, not with Supabase
-     */
-    static getRegisteredEmails(): string[] {
-        if (isSupabaseConfigured()) {
-            console.warn('getRegisteredEmails() not supported with Supabase - use for development only');
-            return [];
-        }
-        
-        return FALLBACK_EMAIL_TO_ADDRESS_MAP.map(m => m.email);
-    }
-
     /**
      * Generate a deterministic address for unregistered emails
      * This creates a temporary "holding" address based on the email

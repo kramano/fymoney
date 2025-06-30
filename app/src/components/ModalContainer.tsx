@@ -55,7 +55,11 @@ const ModalContainer = ({
 
             {/* Earn Modal */}
             <Modal isOpen={activeModal === "earn"} onClose={onClose} title="Start Earning">
-                <EarnModal onClose={onClose} />
+                <EarnModal 
+                    onClose={onClose} 
+                    balance={usdcBalance}
+                    onTransactionSuccess={onTransactionSuccess}
+                />
             </Modal>
 
             {/* Settings Modal */}
